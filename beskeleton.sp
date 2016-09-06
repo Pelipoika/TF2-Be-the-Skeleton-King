@@ -331,6 +331,8 @@ public Action Timer_PerformStomp(Handle timer, Handle pack)
 	vecOrigin[1] += (vLeft[1] * -35);
 	vecOrigin[2] += (vLeft[2] * -35);
 	
+//	Explode(vecOrigin, GetConVarFloat(g_hCvarStompDamage), 200.0, "bomibomicon_ring", "");
+	
 	CreateParticle("bomibomicon_ring", vecOrigin);	//The effect actually comes out of his leg VALVE
 	
 	float pos2[3], Vec[3], AngBuff[3];
@@ -362,12 +364,23 @@ public Action TakeDamage(int victim, int &attacker, int &inflictor, float &damag
 	if(victim > 0 && victim <= MaxClients && IsClientInGame(victim) 
 	&& attacker > 0 && attacker <= MaxClients && IsClientInGame(attacker)
 	&& attacker != victim)
-	{
+	{	
+		bool bChanged = false;
+	
+		if(g_bSkeleton[victim])
+		{
+			damage *= 0.3;
+			bChanged = true;
+		}
+		
 		if(g_bSkeleton[attacker])
 		{
 			damage = GetRandomFloat(95.0, 120.0);
-			return Plugin_Changed;
+			bChanged = true;
 		}
+		
+		if(bChanged)
+			return Plugin_Changed;
 	}
 	
 	return Plugin_Continue; 
@@ -509,6 +522,20 @@ stock void TF2_RemoveAllWearables(int client)
 		}
 	}
 }
+
+stock void Explode(float flPos[3], float flDamage, float flRadius, const char[] strParticle, const char[] strSound)
+{
+    int iBomb = CreateEntityByName("tf_generic_bomb");
+    DispatchKeyValueVector(iBomb, "origin", flPos);
+    DispatchKeyValueFloat(iBomb, "damage", flDamage);
+    DispatchKeyValueFloat(iBomb, "radius", flRadius);
+    DispatchKeyValue(iBomb, "health", "1");
+    DispatchKeyValue(iBomb, "explode_particle", strParticle);
+    DispatchKeyValue(iBomb, "sound", strSound);
+    DispatchSpawn(iBomb);
+
+    AcceptEntityInput(iBomb, "Detonate");
+}  
 
 stock void SetNextAttack(int weapon, float duration = 0.0)
 {
